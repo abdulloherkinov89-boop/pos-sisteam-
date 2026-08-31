@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sozlamalar - Savdo Boshqaruvi Tizimi</title>
+    <style>
+        /* ==========================================
+           1. ASOSIY VA UMUMIY USLUBLAR (RESET)
+           ========================================== */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f2f5;
+            color: #333333;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* ==========================================
+           2. YUQORI PANEL (TOPBAR)
+           ========================================== */
+        .topbar {
+            background-color: #2c5aa0;
+            color: #ffffff;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            border-bottom: 2px solid #1e3f73;
+            flex-shrink: 0;
+        }
+
+        .topbar .logo {
+            font-size: 18px;
+            font-weight: bold;
+            letter-spacing: 0.5px;
+        }
+
+        .topbar .branch-info {
+            font-size: 14px;
+            background-color: rgba(255, 255, 255, 0.12);
+            padding: 4px 10px;
+            border-radius: 3px;
+            border: 1px solid rgba(255, 255, 255, 0.25);
+        }
+
+        .topbar .branch-info select {
+            background: transparent;
+            color: #ffffff;
+            border: none;
+            font-size: 14px;
+            font-family: inherit;
+            font-weight: bold;
+            outline: none;
+        }
+
+        .topbar .branch-info select option {
+            color: #333333;
+        }
+
+        .topbar .user-info {
+            font-size: 14px;
+        }
+
+        /* ==========================================
+           3. ASOSIY KONTEYNER VA SIDEBAR
+           ========================================== */
+        .main-container {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .sidebar {
+            width: 220px;
+            background-color: #e4e8ee;
+            border-right: 1px solid #cccccc;
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+        }
+
+        .sidebar ul {
+            list-style: none;
+        }
+
+        .sidebar li a {
+            display: block;
+            padding: 12px 20px;
+            color: #333333;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            border-bottom: 1px solid #d0d5dd;
+            transition: background-color 0.2s;
+        }
+
+        .sidebar li a:hover {
+            background-color: #d8dfe8;
+            color: #2c5aa0;
+        }
+
+        .sidebar li.active a {
+            background-color: #2c5aa0;
+            color: #ffffff;
+            font-weight: bold;
+        }
+
+        /* ==========================================
+           4. MARKAZIY KONTENT SOHASI
+           ========================================== */
+        .content {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        /* ==========================================
+           5. STATISTIK KARTALAR (CARDS)
+           ========================================== */
+        .cards-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background-color: #ffffff;
+            border: 1px solid #cccccc;
+            border-top: 4px solid #2c5aa0;
+            padding: 20px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        .card-title {
+            font-size: 15px;
+            color: #2c5aa0;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #2c5aa0;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .card-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2c5aa0;
+        }
+
+        /* ==========================================
+           6. FORMALAR VA SOZLAMALAR USLUBLARI
+           ========================================== */
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: #333333;
+            margin-bottom: 5px;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 9px 12px;
+            font-size: 14px;
+            border: 1px solid #cccccc;
+            border-radius: 3px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .form-control:focus {
+            border-color: #2c5aa0;
+        }
+
+        .help-text {
+            font-size: 12px;
+            color: #666666;
+            margin-top: 4px;
+            display: block;
+        }
+
+        .btn {
+            background-color: #2c5aa0;
+            color: #ffffff;
+            border: none;
+            padding: 8px 16px;
+            font-size: 13px;
+            font-weight: 600;
+            border-radius: 3px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .btn:hover {
+            background-color: #1e3f73;
+        }
+
+        .btn:disabled {
+            background-color: #bbbbbb;
+            cursor: not-allowed;
+        }
+
+        .btn-danger {
+            background-color: #d9534f;
+        }
+
+        .btn-danger:hover {
+            background-color: #c9302c;
+        }
+
+        /* Xabar uslublari */
+        .message-box {
+            margin-top: 10px;
+            font-size: 13px;
+            font-weight: 600;
+            display: none;
+            padding: 8px 12px;
+            border-radius: 3px;
+        }
+
+        .message-box.success {
+            display: block;
+            color: #155724;
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+        }
+
+        .message-box.error {
+            display: block;
+            color: #721c24;
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+        }
+
+        /* Integratsiya qatorlari uslubi */
+        .integration-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 15px;
+            background-color: #f9fafb;
+            border: 1px solid #e0e0e0;
+            border-radius: 3px;
+            margin-bottom: 10px;
+            opacity: 0.6;
+            cursor: not-allowed;
+            user-select: none;
+        }
+
+        .integration-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .integration-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #333333;
+        }
+
+        .badge-disabled {
+            background-color: #6c757d;
+            color: #ffffff;
+            font-size: 11px;
+            padding: 4px 8px;
+            border-radius: 3px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+    </style>
+</head>
+<body>
+
+    <header class="topbar">
+        <div class="logo">SAVDO BOSHGARUVI 1.0</div>
+        <div class="branch-info">
+            Filial:
+            <select id="branchSelect" onchange="onBranchChange()">
+                <option value="">Yuklanmoqda...</option>
+            </select>
+        </div>
+        <div class="user-info">Foydalanuvchi: <strong>Administrator</strong></div>
+    </header>
+
+    <div class="main-container">
+        
+        <aside class="sidebar">
+            <nav>
+                <ul>
+                    <li><a href="{% url 'kassa_view' %}">Kassa</a></li>
+                    <li><a href="{% url 'ombor_view' %}">Ombor</a></li>
+                    <li><a href="{% url 'mijoz_html' %}">Mijozlar</a></li>
+                    <li><a href="{% url 'hisobot' %}">Hisobotlar</a></li>
+                    <li><a href="{% url 'filal_view' %}">Filiallar</a></li>
+                    <li class="active"><a href="{% url 'sozlamalar' %}">Sozlamalar</a></li>
+                </ul>
+            </nav>
+        </aside>
+
+        <main class="content">
+            <div class="cards-container">
+                
+                <!-- A) Tizim sozlamalari -->
+                <div class="card">
+                    <div class="card-title">Tizim sozlamalari</div>
+                    <form id="settingsForm" onsubmit="saveSettings(event)">
+                        <div class="form-group">
+                            <label for="lowStockThreshold">Kam qoldiq chegarasi</label>
+                            <input type="number" id="lowStockThreshold" class="form-control" placeholder="Masalan: 10" required min="0">
+                            <span class="help-text">Bu chegaradan kam qolgan mahsulotlar Hisobotlarda ogohlantirish sifatida chiqadi</span>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="currencySymbol">Valyuta belgisi</label>
+                            <input type="text" id="currencySymbol" class="form-control" placeholder="Masalan: UZS yoki so'm" required>
+                        </div>
+
+                        <button type="submit" class="btn">Saqlash</button>
+                        <div id="settingsMessage" class="message-box"></div>
+                    </form>
+                </div>
+
+                <!-- B) Parolni o'zgartirish -->
+                <div class="card">
+                    <div class="card-title">Parolni o'zgartirish</div>
+                    <form id="changePasswordForm" onsubmit="changePassword(event)">
+                        <div class="form-group">
+                            <label for="oldPassword">Eski parol</label>
+                            <input type="password" id="oldPassword" class="form-control" placeholder="Eski parolni kiriting" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="newPassword">Yangi parol</label>
+                            <input type="password" id="newPassword" class="form-control" placeholder="Yangi parolni kiriting" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="confirmPassword">Yangi parolni tasdiqlang</label>
+                            <input type="password" id="confirmPassword" class="form-control" placeholder="Yangi parolni qayta kiriting" required>
+                        </div>
+
+                        <button type="submit" class="btn">Parolni o'zgartirish</button>
+                        <div id="passwordMessage" class="message-box"></div>
+                    </form>
+                </div>
+
+                <!-- C) Kelajakdagi integratsiyalar -->
+                <div class="card">
+                    <div class="card-title">Kelajakdagi integratsiyalar</div>
+                    
+                    <div class="integration-row" onclick="event.preventDefault()">
+                        <div class="integration-info">
+                            <span>📩 SMS xabarnoma</span>
+                        </div>
+                        <span class="badge-disabled">Tez orada</span>
+                    </div>
+
+                    <div class="integration-row" onclick="event.preventDefault()">
+                        <div class="integration-info">
+                            <span>🤖 Telegram bot</span>
+                        </div>
+                        <span class="badge-disabled">Tez orada</span>
+                    </div>
+
+                    <div class="integration-row" onclick="event.preventDefault()">
+                        <div class="integration-info">
+                            <span>🧾 Onlayn-kassa / Fiskalizatsiya</span>
+                        </div>
+                        <span class="badge-disabled">Tez orada</span>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // CSRF cookie o'qish funksiyasi
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        // Sahifa yuklanganda: Filiallarni yuklash va joriy sozlamalarni olish
+        document.addEventListener('DOMContentLoaded', function() {
+            fetchBranches();
+            fetchSettings();
+        });
+
+        // ---------- Filiallarni yuklash (Topbardagi selector uchun) ----------
+        function fetchBranches() {
+            fetch("/api/branches/")
+                .then(response => response.json())
+                .then(data => {
+                    const select = document.getElementById("branchSelect");
+                    select.innerHTML = "";
+
+                    if (!data || data.length === 0) {
+                        select.innerHTML = `<option value="">Filial yo'q</option>`;
+                        return;
+                    }
+
+                    data.forEach(branch => {
+                        const option = document.createElement("option");
+                        option.value = branch.id;
+                        option.textContent = branch.name;
+                        select.appendChild(option);
+                    });
+                })
+                .catch(error => console.error("Filiallarni yuklashda xatolik:", error));
+        }
+
+        function onBranchChange() {
+            // Filial o'zgarganda kerakli logikalar bu yerga yoziladi
+        }
+
+        // ---------- 1. Tizim sozlamalarini olish (GET /api/settings/) ----------
+        function fetchSettings() {
+            fetch("/api/settings/")
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error("Sozlamalarni yuklab bo'lmadi");
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data) {
+                        if (data.low_stock_threshold !== undefined) {
+                            document.getElementById("lowStockThreshold").value = data.low_stock_threshold;
+                        }
+                        if (data.currency !== undefined) {
+                            document.getElementById("currencySymbol").value = data.currency;
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error("Sozlamalarni yuklashda xatolik:", error);
+                });
+        }
+
+        // ---------- 2. Tizim sozlamalarini saqlash (PUT /api/settings/) ----------
+        function saveSettings(event) {
+            event.preventDefault();
+
+            const lowStockThreshold = document.getElementById("lowStockThreshold").value;
+            const currency = document.getElementById("currencySymbol").value;
+            const msgBox = document.getElementById("settingsMessage");
+
+            const settingsData = {
+                low_stock_threshold: parseInt(lowStockThreshold) || 0,
+                currency: currency
+            };
+
+            fetch("/api/settings/", {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": getCookie("csrftoken")
+                },
+                body: JSON.stringify(settingsData)
+            })
+            .then(async response => {
+                const data = await response.json().catch(() => ({}));
+                if (response.ok) {
+                    msgBox.className = "message-box success";
+                    msgBox.textContent = "Saqlandi";
+                    setTimeout(() => {
+                        msgBox.className = "message-box";
+                        msgBox.textContent = "";
+                    }, 3000);
+                } else {
+                    const errorMsg = data.detail || data.error || "Sozlamalarni saqlashda xatolik yuz berdi.";
+                    msgBox.className = "message-box error";
+                    msgBox.textContent = errorMsg;
+                }
+            })
+            .catch(error => {
+                console.error("So'rov yuborishda xatolik:", error);
+                msgBox.className = "message-box error";
+                msgBox.textContent = "Tarmoq xatoligi yoki server bilan aloqa yo'q!";
+            });
+        }
+
+        // ---------- 3. Parolni o'zgartirish (POST /api/change-password/) ----------
+        function changePassword(event) {
+            event.preventDefault();
+
+            const oldPassword = document.getElementById("oldPassword").value;
+            const newPassword = document.getElementById("newPassword").value;
+            const confirmPassword = document.getElementById("confirmPassword").value;
+            const msgBox = document.getElementById("passwordMessage");
+
+            // Frontend tekshiruvi: yangi parol va tasdiqlash bir xilligi
+            if (newPassword !== confirmPassword) {
+                msgBox.className = "message-box error";
+                msgBox.textContent = "Yangi parol va tasdiqlash paroli bir-biriga mos kelmadi!";
+                return;
+            }
+
+            const passwordData = {
+                old_password: oldPassword,
+                new_password: newPassword
+            };
+
+            fetch("/api/change-password/", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": getCookie("csrftoken")
+                },
+                body: JSON.stringify(passwordData)
+            })
+            .then(async response => {
+                const data = await response.json().catch(() => ({}));
+                if (response.ok) {
+                    msgBox.className = "message-box success";
+                    msgBox.textContent = data.message || data.detail || "Parol muvaffaqiyatli o'zgartirildi!";
+                    document.getElementById("changePasswordForm").reset();
+                    setTimeout(() => {
+                        msgBox.className = "message-box";
+                        msgBox.textContent = "";
+                    }, 4000);
+                } else {
+                    const errorMsg = data.detail || data.error || data.message || "Parolni o'zgartirishda xatolik yuz berdi.";
+                    msgBox.className = "message-box error";
+                    msgBox.textContent = errorMsg;
+                }
+            })
+            .catch(error => {
+                console.error("So'rov yuborishda xatolik:", error);
+                msgBox.className = "message-box error";
+                msgBox.textContent = "Tarmoq xatoligi yoki server bilan aloqa yo'q!";
+            });
+        }
+    </script>
+</body>
+</html>
