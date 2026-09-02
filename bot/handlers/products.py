@@ -38,7 +38,13 @@ async def show_products_list(callback: CallbackQuery):
         return
 
     keyboard = await get_products_keyboard()
-    await callback.message.edit_text("Mahsulotni tanlang:", reply_markup=keyboard)
+    await callback.message.edit_text(
+        "🏪 <b>POS Sisteam</b>\n\n"
+        "📦 <b>Mahsulotlar ro'yxati</b>\n\n"
+        "Qoldig'ini ko'rish uchun mahsulotni tanlang:",
+        parse_mode="HTML",
+        reply_markup=keyboard
+    )
     await callback.answer()
 
 

@@ -14,8 +14,13 @@ async def cmd_start(message: Message):
         await message.answer("⛔ Sizga bu botdan foydalanishga ruxsat yo'q.")
         return
 
-    await message.answer("""
-                        Salom, hurmatli Admin! 👋
-
-Tizimdan foydalanishni davom ettirish uchun quyidagi menyu bo'limlaridan birini tanlang: 👇
-                        """, reply_markup=main_menu_keyboard())
+    await message.answer(
+        "🏪 <b>POS Sisteam</b>\n\n"
+        "👋 Xush kelibsiz, Administrator!\n\n"
+        "Quyidagi menyudan kerakli bo'limni tanlang:\n"
+        "📦 — mahsulotlar ro'yxati\n"
+        "🔍 — mahsulot qidirish\n"
+        "🛒 — savat va sotuv",
+        parse_mode="HTML",
+        reply_markup=main_menu_keyboard()
+    )

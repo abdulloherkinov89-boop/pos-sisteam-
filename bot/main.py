@@ -19,6 +19,7 @@ from aiogram.fsm.storage.memory import MemoryStorage
 from handlers.start import router as start_router
 from handlers.products import router as products_router
 from handlers.inline import router as inline_router
+from handlers.cart import router as cart_router
 
 BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 
@@ -28,6 +29,7 @@ dp = Dispatcher(storage=MemoryStorage())
 dp.include_router(start_router)
 dp.include_router(products_router)
 dp.include_router(inline_router)
+dp.include_router(cart_router)
 
 
 async def main():
