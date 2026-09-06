@@ -1,10 +1,7 @@
 from aiogram import Router, F
-from aiogram.types import CallbackQuery
+from aiogram.types import CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.fsm.context import FSMContext
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from asgiref.sync import sync_to_async
-from handlers.keyboards import payment_keyboard
-
 
 from products.models import Product
 
@@ -18,28 +15,58 @@ def get_product_sync(product_id):
 get_product = sync_to_async(get_product_sync)
 
 
-@router.callback_query(F.data.startswith("add_cart_"))
-async def add_to_cart(callback: CallbackQuery, state: FSMContext):
-    product_id = int(callback.data.split("_")[2])
+def qty_keyboard(product_id, qty):
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [
+            InlineKeyboardButton(text="➖", callback_data=f"qty_{product_id}_{max(1, qty-1)}"),
+            InlineKeyboardButton(text=str(qty), callback_data="noop"),
+            InlineKeyboardButton(text="➕", callback_data=f"qty_{product_id}_{qty+1}"),
+        ],
+        [InlineKeyboardButton(text="✅ Savatga qo'shish", callback_data=f"confirm_{product_id}_{qty}")],
+    ])
+
+
+@router.callback_query(F.data.startswith("qty_"))
+async def change_qty(callback: CallbackQuery):
+    _, product_id, qty = callback.data.split("_")
+    product_id, qty = int(product_id), int(qty)
+
+    product = await get_product(product_id)
+    text = f"📦 <b>{product.name}</b> — {int(product.sale_price)} so'm\n\nMiqdorini tanlang:"
+
+    await callback.message.edit_text(text, parse_mode="HTML", reply_markup=qty_keyboard(product_id, qty))
+    await callback.answer()
+
+
+@router.callback_query(F.data == "noop")
+async def noop(callback: CallbackQuery):
+    await callback.answer()
+
+
+@router.callback_query(F.data.startswith("confirm_"))
+async def confirm_add_to_cart(callback: CallbackQuery, state: FSMContext):
+    _, product_id, qty = callback.data.split("_")
+    product_id, qty = int(product_id), int(qty)
+
     product = await get_product(product_id)
 
     data = await state.get_data()
     cart = data.get("cart", {})
 
-    # Agar mahsulot allaqachon savatda bo'lsa, miqdorini +1 qilamiz
     if str(product_id) in cart:
-        cart[str(product_id)]["quantity"] += 1
+        cart[str(product_id)]["quantity"] += qty
     else:
         cart[str(product_id)] = {
             "name": product.name,
             "price": float(product.sale_price),
-            "quantity": 1,
+            "quantity": qty,
         }
 
     await state.update_data(cart=cart)
 
-    await callback.answer(f"✅ {product.name} savatga qo'shildi!", show_alert=False)
-    
+    await callback.message.edit_text(f"✅ {product.name} ({qty} dona) savatga qo'shildi!")
+    await callback.answer()
+
 
 def build_cart_text(cart):
     if not cart:
@@ -72,7 +99,10 @@ async def show_cart(callback: CallbackQuery, state: FSMContext):
     text = build_cart_text(cart)
     await callback.message.edit_text(text, parse_mode="HTML", reply_markup=cart_keyboard(cart))
     await callback.answer()
-    
+
+
+from handlers.keyboards import payment_keyboard
+
 
 @router.callback_query(F.data == "checkout")
 async def checkout(callback: CallbackQuery, state: FSMContext):
