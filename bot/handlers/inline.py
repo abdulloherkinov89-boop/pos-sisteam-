@@ -36,7 +36,7 @@ def search_products_sync(query):
                     parse_mode="HTML",
                 ),
                 reply_markup=InlineKeyboardMarkup(inline_keyboard=[
-                    [InlineKeyboardButton(text="➕ Savatga qo'shish", callback_data=f"add_cart_{product.id}")]
+                    [InlineKeyboardButton(text="➕ Savatga qo'shish", callback_data=f"qty_{product.id}_1")]
                 ]),
             )
         )

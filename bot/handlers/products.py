@@ -50,7 +50,14 @@ async def show_products_list(callback: CallbackQuery):
 
 @router.callback_query(F.data == "main_menu")
 async def back_to_main_menu(callback: CallbackQuery):
-    await callback.message.edit_text("Bosh menyu:", reply_markup=main_menu_keyboard())
+    if callback.message:
+        await callback.message.edit_text("Bosh menyu:", reply_markup=main_menu_keyboard())
+    else:
+        await callback.bot.edit_message_text(
+            "Bosh menyu:",
+            inline_message_id=callback.inline_message_id,
+            reply_markup=main_menu_keyboard(),
+        )
     await callback.answer()
 
 
@@ -93,6 +100,9 @@ async def ask_product_query(callback: CallbackQuery, state: FSMContext):
 
 @router.message(SaleStates.waiting_for_product_query)
 async def receive_product_query(message: Message, state: FSMContext):
+    if message.via_bot:
+        return
+
     query = message.text.strip()
     text = await sync_to_async(get_product_stock_text_by_name)(query)
 
