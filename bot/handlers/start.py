@@ -11,13 +11,17 @@ router = Router()
 @router.message(CommandStart())
 async def cmd_start(message: Message):
     if not is_admin(message.from_user.id):
-        await message.answer("⛔ Sizga bu botdan foydalanishga ruxsat yo'q.")
+        await message.answer(
+            "⛔ <b>Kirish imkoni mavjud emas.</b>\n\n"
+            "Botdan foydalanish uchun administratoringizga murojaat qiling.",
+            parse_mode="HTML",
+        )
         return
 
     await message.answer(
-        "🏪 <b>POS Sisteam</b>\n\n"
-        "👋 Xush kelibsiz, Administrator!\n\n"
-        "Quyidagi menyudan kerakli bo'limni tanlang:\n"
+        "🏪 <b>POS Sisteam</b> bosh menyusiga xush kelibsiz!\n\n"
+        "👋 Administrator sifatida savdo jarayonini boshqarishingiz mumkin.\n"
+        "Kerakli bo'limni tanlang:\n"
         "📦 — mahsulotlar ro'yxati\n"
         "🔍 — mahsulot qidirish\n"
         "🛒 — savat va sotuv",

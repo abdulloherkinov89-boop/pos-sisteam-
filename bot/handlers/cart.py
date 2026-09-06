@@ -37,7 +37,11 @@ async def change_qty(callback: CallbackQuery):
     product_id, qty = int(product_id), int(qty)
 
     product = await get_product(product_id)
-    text = f"📦 <b>{product.name}</b> — {int(product.sale_price)} so'm\n\nMiqdorini tanlang:"
+    text = (
+        f"📦 <b>{product.name}</b>\n"
+        f"💰 Narxi: <b>{int(product.sale_price)} so'm</b>\n\n"
+        "Nechta olmoqchisiz? Miqdorni tanlang:"
+    )
 
     if callback.message:
         # Oddiy xabar bo'lsa
@@ -80,17 +84,22 @@ async def confirm_add_to_cart(callback: CallbackQuery, state: FSMContext):
 
     await state.update_data(cart=cart)
 
-    text = f"✅ {product.name} ({qty} dona) savatga qo'shildi!"
+    text = (
+        f"✅ <b>{product.name}</b> savatga qo'shildi!\n\n"
+        f"📦 Miqdor: <b>{qty} dona</b>\n"
+        "Savatni ko'rib chiqishingiz yoki xaridni davom ettirishingiz mumkin."
+    )
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="🛒 Savatni ko'rish", callback_data="show_cart")]
     ])
 
     if callback.message:
-        await callback.message.edit_text(text, reply_markup=keyboard)
+        await callback.message.edit_text(text, parse_mode="HTML", reply_markup=keyboard)
     else:
         await callback.bot.edit_message_text(
             text,
             inline_message_id=callback.inline_message_id,
+            parse_mode="HTML",
             reply_markup=keyboard
         )
 
@@ -99,16 +108,19 @@ async def confirm_add_to_cart(callback: CallbackQuery, state: FSMContext):
 
 def build_cart_text(cart):
     if not cart:
-        return "🛒 Savat bo'sh."
+        return (
+            "🛒 <b>Savatingiz hozircha bo'sh.</b>\n\n"
+            "Mahsulotlar bo'limidan kerakli mahsulotlarni tanlab, xaridni boshlang."
+        )
 
-    text = "🛒 <b>Savat:</b>\n\n"
+    text = "🛒 <b>Savatingiz</b>\n\n"
     total = 0
     for item in cart.values():
         subtotal = item["price"] * item["quantity"]
         total += subtotal
         text += f"• {item['name']} — {item['quantity']} x {int(item['price'])} = {int(subtotal)} so'm\n"
 
-    text += f"\n💰 <b>Jami: {int(total)} so'm</b>"
+    text += f"\n💰 <b>Jami summa: {int(total)} so'm</b>"
     return text
 
 
@@ -152,7 +164,7 @@ def create_sale_sync(cart, payment_type, customer_id=None):
     with transaction.atomic():
         branch = Branch.objects.first()
         if branch is None:
-            raise CheckoutError("❌ Filial topilmadi.")
+            raise CheckoutError("⚠️ Savdoni yakunlash uchun filial ma'lumotlari topilmadi.")
 
         customer = None
         if customer_id is not None:
@@ -175,8 +187,8 @@ def create_sale_sync(cart, payment_type, customer_id=None):
             stock = Stock.objects.select_for_update().get(branch=branch, product=product)
             if stock.quantity < quantity:
                 raise CheckoutError(
-                    f"❌ {product.name} uchun yetarli qoldiq yo'q "
-                    f"(mavjud: {stock.quantity:g}, kerak: {quantity:g})."
+                    f"⚠️ {product.name} uchun qoldiq yetarli emas.\n"
+                    f"Omborda: {stock.quantity:g} dona, kerak: {quantity:g} dona."
                 )
 
             SaleItem.objects.create(
@@ -223,17 +235,18 @@ def customer_keyboard(customers):
 
 
 def receipt_text(cart, sale_id, total_amount, payment_type, customer_name=None):
-    text = "✅ <b>Sotuv muvaffaqiyatli amalga oshirildi!</b>\n\n"
+    text = "✅ <b>Sotuv muvaffaqiyatli yakunlandi!</b>\n\n"
+    text += "POS Sisteam cheki\n"
     text += f"🧾 Chek ID: <b>#{sale_id}</b>\n"
-    text += "\n"
+    text += "\n📋 <b>Mahsulotlar:</b>\n"
     for item in cart.values():
         subtotal = Decimal(str(item["price"])) * item["quantity"]
         text += (
             f"• {escape(str(item['name']))} — {item['quantity']} x "
             f"{int(item['price'])} = {int(subtotal)} so'm\n"
         )
-    text += f"\n💰 <b>Jami: {int(total_amount)} so'm</b>"
-    text += f"\n💳 To'lov: <b>{payment_type}</b>"
+    text += f"\n💰 <b>Jami summa: {int(total_amount)} so'm</b>"
+    text += f"\n💳 To'lov turi: <b>{payment_type}</b>"
     if customer_name:
         text += f"\n👤 Mijoz: <b>{escape(customer_name)}</b>"
     return text
@@ -255,7 +268,7 @@ async def complete_sale(callback, state, payment_type, customer_id=None, custome
     data = await state.get_data()
     cart = data.get("cart", {})
     if not cart:
-        await callback.answer("🛒 Savat bo'sh!", show_alert=True)
+        await callback.answer("🛒 Savat bo'sh. Avval mahsulot qo'shing.", show_alert=True)
         return
 
     try:
@@ -264,7 +277,10 @@ async def complete_sale(callback, state, payment_type, customer_id=None, custome
         await callback.answer(str(error), show_alert=True)
         return
     except (Customer.DoesNotExist, Product.DoesNotExist, Stock.DoesNotExist):
-        await callback.answer("❌ Mahsulot yoki ombor qoldig'i topilmadi.", show_alert=True)
+        await callback.answer(
+            "⚠️ Mahsulot yoki ombor qoldig'i topilmadi. Savatni tekshirib, qayta urinib ko'ring.",
+            show_alert=True,
+        )
         return
 
     await state.clear()
@@ -282,10 +298,10 @@ async def checkout(callback: CallbackQuery, state: FSMContext):
     cart = data.get("cart", {})
 
     if not cart:
-        await callback.answer("🛒 Savat bo'sh!", show_alert=True)
+        await callback.answer("🛒 Savat bo'sh. Avval mahsulot qo'shing.", show_alert=True)
         return
 
-    text = build_cart_text(cart) + "\n\n💳 To'lov turini tanlang:"
+    text = build_cart_text(cart) + "\n\n💳 <b>To'lov turini tanlang</b>\nSizga qulay usulni belgilang:"
     await edit_callback_text(callback, text, payment_keyboard())
     await callback.answer()
 
@@ -300,7 +316,11 @@ async def pay_cash_or_card(callback: CallbackQuery, state: FSMContext):
 @router.callback_query(F.data == "pay_qarz")
 async def start_credit_sale(callback: CallbackQuery, state: FSMContext):
     await state.set_state(SaleStates.waiting_for_customer)
-    await edit_callback_text(callback, "👤 Mijoz ismini kiriting:")
+    await edit_callback_text(
+        callback,
+        "👤 <b>Nasiya savdosi</b>\n\n"
+        "Mijoz ismini kiriting, shunda to'lovni uning hisobiga rasmiylashtiramiz.",
+    )
     await callback.answer()
 
 
@@ -311,13 +331,19 @@ async def find_customer(message: Message, state: FSMContext):
 
     customers = await find_customers((message.text or "").strip())
     if not customers:
-        await message.answer("❌ Bunday mijoz topilmadi.")
+        await message.answer(
+            "🔎 <b>Mijoz topilmadi.</b>\n\n"
+            "Ismni tekshirib, yana bir bor yuboring.",
+            parse_mode="HTML",
+        )
         await state.clear()
         return
 
     if len(customers) > 1:
         await message.answer(
-            "👤 Mijozni tanlang:",
+            "👤 <b>Mijozni tanlang</b>\n\n"
+            "Topilgan mijozlardan keraklisini belgilang:",
+            parse_mode="HTML",
             reply_markup=customer_keyboard(customers),
         )
         return
@@ -331,7 +357,10 @@ async def find_customer(message: Message, state: FSMContext):
         await message.answer(str(error))
         return
     except (Customer.DoesNotExist, Product.DoesNotExist, Stock.DoesNotExist):
-        await message.answer("❌ Mahsulot yoki ombor qoldig'i topilmadi.")
+        await message.answer(
+            "⚠️ Mahsulot yoki ombor qoldig'i topilmadi. Savatni tekshirib, qayta urinib ko'ring.",
+            parse_mode="HTML",
+        )
         return
 
     await state.clear()
@@ -348,7 +377,7 @@ async def select_customer(callback: CallbackQuery, state: FSMContext):
     try:
         customer = await get_customer(customer_id)
     except Customer.DoesNotExist:
-        await callback.answer("❌ Mijoz topilmadi.", show_alert=True)
+        await callback.answer("⚠️ Mijoz topilmadi. Iltimos, qaytadan tanlang.", show_alert=True)
         await state.clear()
         return
 
