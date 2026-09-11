@@ -4,16 +4,24 @@ from asgiref.sync import sync_to_async
 from products.models import Product
 
 
-def main_menu_keyboard():
-    return InlineKeyboardMarkup(inline_keyboard=[
+def main_menu_keyboard(is_admin_user: bool = False):
+    buttons = [
         [
             InlineKeyboardButton(text="📦 Mahsulotlar", callback_data="products_list"),
             InlineKeyboardButton(text="🔍 Mahsulot qidirish", callback_data="search_product")
         ],
         [
-            InlineKeyboardButton(text="🛒 Savat", callback_data="show_cart")
+            InlineKeyboardButton(text="🛒 Savat", callback_data="show_cart"),
+            InlineKeyboardButton(text="💳 Qarzlar", callback_data="debts")
         ],
-    ])
+    ]
+
+    if is_admin_user:
+        buttons.append([
+            InlineKeyboardButton(text="⚙️ Admin sozlamalari", callback_data="admin_settings")
+        ])
+
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
 
 
 def get_products_keyboard_sync():
